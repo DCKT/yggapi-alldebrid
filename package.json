@@ -11,6 +11,7 @@
     "typescript": "^5.0.0"
   },
   "dependencies": {
+    "@radix-ui/react-toast": "^1.2.6",
     "@radix-ui/themes": "^3.2.1",
     "@swan-io/boxed": "^3.2.0",
     "bun-plugin-tailwind": "^0.0.14",
