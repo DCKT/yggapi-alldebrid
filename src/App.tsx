@@ -13,8 +13,13 @@ type Torrent = {
   seeders: number;
 };
 
-function octetToMega(octets: number): number {
-  return octets / (1024 * 1024);
+function formatSize(octets: number): string {
+  const mega = octets / (1024 * 1024);
+  if (mega >= 1000) {
+    const giga = mega / 1024;
+    return `${giga.toFixed(2)} GB`;
+  }
+  return `${mega.toFixed(2)} MB`;
 }
 
 type SaveResponse = {
@@ -158,7 +163,7 @@ export const App = () => {
                         <section className="flex flex-row items-center justify-between">
                           <div>
                             <p className="text-xs lg:text-sm text-gray-700">
-                              Taille: {octetToMega(torrent.size).toFixed(2)} Mb
+                              Taille: {formatSize(torrent.size)}
                             </p>
                             <p className="text-sm text-gray-700">
                               Seeders: {torrent.seeders}
