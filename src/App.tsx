@@ -37,22 +37,20 @@ type ToastMessage = {
 
 export const App = () => {
   const [query, setQuery] = useState("");
-  const [results, setResults] = useState<AsyncData<Result<Torrent[], any>>>(
-    AsyncData.NotAsked,
-  );
+  const [orderBy, setOrderBy] = useState("seeders");
+  const [results, setResults] = useState<AsyncData<Result<Torrent[], any>>>(AsyncData.NotAsked);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [displayType, setDisplayType] = useState(DisplayType.Grid);
-  const [toastMessage, setToastMessage] = useState<Option<ToastMessage>>(
-    Option.None(),
-  );
+  const [toastMessage, setToastMessage] = useState<Option<ToastMessage>>(Option.None());
 
   const fetchTorrents = async (searchQuery: string, page: number) => {
     setResults(AsyncData.Loading);
+
     try {
       const response = await fetch(`/api/search`, {
         method: "POST",
-        body: JSON.stringify({ search: searchQuery, page: page }),
+        body: JSON.stringify({ search: searchQuery, orderBy, page }),
       });
       const data = await response.json();
       setResults(AsyncData.Done(Result.Ok(data)));
@@ -80,15 +78,11 @@ export const App = () => {
       const data: SaveResponse = await response.json();
 
       if (data.status === "success") {
-        setToastMessage(
-          Option.Some({ status: "success", message: "File saved" }),
-        );
+        setToastMessage(Option.Some({ status: "success", message: "File saved" }));
       }
       // TODO: handle torrent pending
     } catch (error) {
-      setToastMessage(
-        Option.Some({ status: "error", message: "Something went wrong" }),
-      );
+      setToastMessage(Option.Some({ status: "error", message: "Something went wrong" }));
     }
   };
 
@@ -112,9 +106,17 @@ export const App = () => {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
           />
-          <button className="bg-blue-100 h-[41px] p-2 border border-blue-200 rounded-r-lg">
-            🔎
-          </button>
+          <select
+            name="orderBy"
+            id="orderBy"
+            className="border border-r-0 h-10 border-gray-300"
+            onChange={(e) => setOrderBy(e.target.value)}
+          >
+            <option value="seeders">Seeders</option>
+            <option value="downloads">Downloads</option>
+            <option value="uploaded_at">Date</option>
+          </select>
+          <button className="bg-blue-100 h-[41px] p-2 border border-blue-200 rounded-r-lg">🔎</button>
         </form>
         {results.isDone() ? (
           <section className="hidden lg:flex flex-row gap-2">
@@ -138,7 +140,9 @@ export const App = () => {
         ) : null}
       </div>
       <div
-        className={`grid gap-4 ${displayType === DisplayType.Grid ? "grid-cols-1 md:grid-cols-2 lg:grid-cols-3" : "grid-rows-1"}`}
+        className={`grid gap-4 ${
+          displayType === DisplayType.Grid ? "grid-cols-1 md:grid-cols-2 lg:grid-cols-3" : "grid-rows-1"
+        }`}
       >
         {results.match({
           NotAsked: () => null,
@@ -147,8 +151,7 @@ export const App = () => {
             return d.match({
               Error: (error) => (
                 <section className="flex flex-col gap-4 text-red-700">
-                  <Text>Une erreur est survenue</Text>{" "}
-                  {error ? <Text>{error}</Text> : null}
+                  <Text>Une erreur est survenue</Text> {error ? <Text>{error}</Text> : null}
                 </section>
               ),
               Ok: (d) => {
@@ -157,17 +160,11 @@ export const App = () => {
                   .otherwise(() => {
                     return d.map((torrent) => (
                       <Card key={torrent.id}>
-                        <h3 className="text-sm lg:text-lg font-bold break-all">
-                          {torrent.title}
-                        </h3>
+                        <h3 className="text-sm lg:text-lg font-bold break-all">{torrent.title}</h3>
                         <section className="flex flex-row items-center justify-between">
                           <div>
-                            <p className="text-xs lg:text-sm text-gray-700">
-                              Taille: {formatSize(torrent.size)}
-                            </p>
-                            <p className="text-sm text-gray-700">
-                              Seeders: {torrent.seeders}
-                            </p>
+                            <p className="text-xs lg:text-sm text-gray-700">Taille: {formatSize(torrent.size)}</p>
+                            <p className="text-sm text-gray-700">Seeders: {torrent.seeders}</p>
                           </div>
                           <Button
                             className="cursor-pointer"
@@ -191,12 +188,8 @@ export const App = () => {
         Some: ({ status, message }) => {
           return (
             <Toast.Provider swipeDirection="right">
-              <Toast.Root
-                className={`ToastRoot ${status === "success" ? "!bg-green-100" : "!bg-red-100"}`}
-              >
-                <Toast.Title
-                  className={`ToastTitle ${status === "success" ? "!text-green-700" : "!text-red-700"}`}
-                >
+              <Toast.Root className={`ToastRoot ${status === "success" ? "!bg-green-100" : "!bg-red-100"}`}>
+                <Toast.Title className={`ToastTitle ${status === "success" ? "!text-green-700" : "!text-red-700"}`}>
                   {message}
                 </Toast.Title>
               </Toast.Root>

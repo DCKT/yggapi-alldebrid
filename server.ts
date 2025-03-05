@@ -37,6 +37,8 @@ type AllDebridResponse<T> = {
   data: T;
 };
 
+type OrderBy = "uploaded_at" | "seeders" | "downloads";
+
 const sendError = (msg: string, details: any) => {
   return new Response(
     JSON.stringify({
@@ -61,12 +63,12 @@ const searchAndAppend = (links: string[], file: File) => {
   return links;
 };
 
-const recursiveYggSearch = async (search: string, page: number = 1): Promise<string[]> => {
-  const res = await fetch(`https://yggapi.eu/torrents?page=${page}&q=${search}&order_by=uploaded_at&per_page=100`);
+const recursiveYggSearch = async (search: string, orderBy: OrderBy, page: number = 1): Promise<string[]> => {
+  const res = await fetch(`https://yggapi.eu/torrents?page=${page}&q=${search}&order_by=${orderBy}&per_page=100`);
   const links = await res.json();
 
   if (links.length > 0) {
-    return links.concat(await recursiveYggSearch(search, page + 1));
+    return links.concat(await recursiveYggSearch(search, orderBy, page + 1));
   }
 
   return links;
@@ -77,9 +79,9 @@ const server = serve({
     "/": app,
     "/api/search": {
       async POST(req) {
-        const { search } = await req.json();
+        const { search, orderBy } = await req.json();
 
-        return Response.json(await recursiveYggSearch(search));
+        return Response.json(await recursiveYggSearch(search, orderBy));
       },
     },
     "/api/dl": {
