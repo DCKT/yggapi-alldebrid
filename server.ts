@@ -43,7 +43,7 @@ const sendError = (msg: string, details: any) => {
       error: msg,
       details: details,
     }),
-    { status: 500 },
+    { status: 500 }
   );
 };
 
@@ -61,6 +61,17 @@ const searchAndAppend = (links: string[], file: File) => {
   return links;
 };
 
+const recursiveYggSearch = async (search: string, page: number = 1): Promise<string[]> => {
+  const res = await fetch(`https://yggapi.eu/torrents?page=${page}&q=${search}&order_by=uploaded_at&per_page=100`);
+  const links = await res.json();
+
+  if (links.length > 0) {
+    return links.concat(await recursiveYggSearch(search, page + 1));
+  }
+
+  return links;
+};
+
 const server = serve({
   routes: {
     "/": app,
@@ -68,12 +79,7 @@ const server = serve({
       async POST(req) {
         const { search } = await req.json();
 
-        const res = await fetch(
-          `https://yggapi.eu/torrents?page=${1}&q=${search}&order_by=uploaded_at&per_page=50`,
-        );
-        const data = await res.json();
-
-        return Response.json(data);
+        return Response.json(await recursiveYggSearch(search));
       },
     },
     "/api/dl": {
@@ -86,10 +92,9 @@ const server = serve({
 
           try {
             const response = await fetch(
-              `https://api.alldebrid.com/v4/magnet/upload?apikey=${ALLDEBRID_API_KEY}&magnets[]=${torrentDetails.hash}`,
+              `https://api.alldebrid.com/v4/magnet/upload?apikey=${ALLDEBRID_API_KEY}&magnets[]=${torrentDetails.hash}`
             );
-            const { data, status }: AllDebridResponse<MagnetsResponse<Magnet>> =
-              await response.json();
+            const { data, status }: AllDebridResponse<MagnetsResponse<Magnet>> = await response.json();
 
             if (status === "error") {
               return sendError("Failed to upload magnet to AllDebrid", data);
@@ -106,25 +111,18 @@ const server = serve({
                 {
                   method: "POST",
                   body: form,
-                },
+                }
               );
 
-              const linkData: AllDebridResponse<MagnetsResponse<MagnetFile>> =
-                await linkResponse.json();
+              const linkData: AllDebridResponse<MagnetsResponse<MagnetFile>> = await linkResponse.json();
 
               if (linkData.status === "error") {
-                return sendError(
-                  "Failed to fetch magnet details from AllDebrid",
-                  linkData.data,
-                );
+                return sendError("Failed to fetch magnet details from AllDebrid", linkData.data);
               }
 
-              const links = linkData.data.magnets[0].files.reduce(
-                (acc, file) => {
-                  return searchAndAppend(acc, file);
-                },
-                [] as string[],
-              );
+              const links = linkData.data.magnets[0].files.reduce((acc, file) => {
+                return searchAndAppend(acc, file);
+              }, [] as string[]);
 
               const f = new FormData();
               links.forEach((l) => {
@@ -136,16 +134,12 @@ const server = serve({
                 {
                   method: "POST",
                   body: f,
-                },
+                }
               );
-              const saveLinksData: AllDebridResponse<{ message: string }> =
-                await saveLinksRes.json();
+              const saveLinksData: AllDebridResponse<{ message: string }> = await saveLinksRes.json();
 
               if (saveLinksData.status === "error") {
-                return sendError(
-                  "Failed to save links to AllDebrid",
-                  saveLinksData.data,
-                );
+                return sendError("Failed to save links to AllDebrid", saveLinksData.data);
               }
               return Response.json({
                 status: "success",
