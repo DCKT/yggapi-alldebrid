@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { TorrentDetail, AllDebridResponse, MagnetsResponse, MagnetFile, Magnet, File } from "@/app/types";
 
-const ALLDEBRID_API_KEY = process.env.ALLDEBRID_API_KEY;
+const ALLDEBRID_API_KEY = localStorage.getItem("ALLDEBRID_API_KEY");
 
 if (!ALLDEBRID_API_KEY) {
   throw new Error("ALLDEBRID_API_KEY env is missing");
