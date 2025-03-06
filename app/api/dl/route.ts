@@ -1,12 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { TorrentDetail, AllDebridResponse, MagnetsResponse, MagnetFile, Magnet, File } from "@/app/types";
 
-const ALLDEBRID_API_KEY = localStorage.getItem("ALLDEBRID_API_KEY");
-
-if (!ALLDEBRID_API_KEY) {
-  throw new Error("ALLDEBRID_API_KEY env is missing");
-}
-
 const sendError = (msg: string, details: any) => {
   return new Response(
     JSON.stringify({
@@ -32,13 +26,14 @@ const searchAndAppend = (links: string[], file: File) => {
 };
 
 export async function POST(req: Request) {
-  const { torrentId } = await req.json();
+  const { torrentId, ALLDEBRID_API_KEY } = await req.json();
 
   try {
     const res = await fetch(`https://yggapi.eu/torrent/${torrentId}`);
     const torrentDetails: TorrentDetail = await res.json();
 
     try {
+      console.log(ALLDEBRID_API_KEY);
       const response = await fetch(
         `https://api.alldebrid.com/v4/magnet/upload?apikey=${ALLDEBRID_API_KEY}&magnets[]=${torrentDetails.hash}`
       );
