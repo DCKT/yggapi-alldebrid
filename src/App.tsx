@@ -44,6 +44,14 @@ export const App = () => {
   const [displayType, setDisplayType] = useState(DisplayType.Grid);
   const [toastMessage, setToastMessage] = useState<Option<ToastMessage>>(Option.None());
 
+  const [alldebridApiKey, setAlldebridApiKey] = useState("");
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      setAlldebridApiKey(localStorage.getItem("ALLDEBRID_API_KEY") || "");
+    }
+  }, []);
+
   const fetchTorrents = async (searchQuery: string, page: number) => {
     setResults(AsyncData.Loading);
 
@@ -73,7 +81,7 @@ export const App = () => {
     try {
       const response = await fetch(`/api/dl`, {
         method: "POST",
-        body: JSON.stringify({ torrentId: torrentId }),
+        body: JSON.stringify({ torrentId: torrentId, alldebridApiKey }),
       });
       const data: SaveResponse = await response.json();
 
@@ -166,14 +174,16 @@ export const App = () => {
                             <p className="text-xs lg:text-sm text-gray-700">Taille: {formatSize(torrent.size)}</p>
                             <p className="text-sm text-gray-700">Seeders: {torrent.seeders}</p>
                           </div>
-                          <Button
-                            className="cursor-pointer"
-                            onClick={(_) => {
-                              saveTorrent(torrent.id);
-                            }}
-                          >
-                            💾
-                          </Button>
+                          {alldebridApiKey ? (
+                            <Button
+                              className="cursor-pointer"
+                              onClick={() => {
+                                saveTorrent(torrent.id);
+                              }}
+                            >
+                              💾
+                            </Button>
+                          ) : null}
                         </section>
                       </Card>
                     ));
@@ -183,6 +193,20 @@ export const App = () => {
           },
         })}
       </div>
+      <form>
+        <input
+          type="text"
+          autoFocus
+          className="border border-gray-300 rounded p-2 text-lg h-10"
+          placeholder="Alldebrid api key"
+          value={alldebridApiKey}
+          onChange={(e) => {
+            setAlldebridApiKey(e.target.value);
+            localStorage.setItem("ALLDEBRID_API_KEY", e.target.value);
+          }}
+        />
+      </form>
+
       {toastMessage.match({
         None: () => null,
         Some: ({ status, message }) => {

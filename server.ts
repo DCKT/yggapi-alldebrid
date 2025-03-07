@@ -1,12 +1,6 @@
 import { serve } from "bun";
 import app from "./index.html";
 
-const ALLDEBRID_API_KEY = process.env.ALLDEBRID_API_KEY;
-
-if (!ALLDEBRID_API_KEY) {
-  throw new Error("ALLDEBRID_API_KEY env is missing");
-}
-
 type TorrentDetail = {
   id: number;
   hash: string;
@@ -86,7 +80,7 @@ const server = serve({
     },
     "/api/dl": {
       async POST(req) {
-        const { torrentId } = await req.json();
+        const { torrentId, alldebridApiKey } = await req.json();
 
         try {
           const res = await fetch(`https://yggapi.eu/torrent/${torrentId}`);
@@ -94,7 +88,7 @@ const server = serve({
 
           try {
             const response = await fetch(
-              `https://api.alldebrid.com/v4/magnet/upload?apikey=${ALLDEBRID_API_KEY}&magnets[]=${torrentDetails.hash}`
+              `https://api.alldebrid.com/v4/magnet/upload?apikey=${alldebridApiKey}&magnets[]=${torrentDetails.hash}`
             );
             const { data, status }: AllDebridResponse<MagnetsResponse<Magnet>> = await response.json();
 
@@ -108,13 +102,10 @@ const server = serve({
               const form = new FormData();
               form.append("id[]", uploadedMagnet.id.toString());
 
-              const linkResponse = await fetch(
-                `https://api.alldebrid.com/v4/magnet/files?apikey=${ALLDEBRID_API_KEY}`,
-                {
-                  method: "POST",
-                  body: form,
-                }
-              );
+              const linkResponse = await fetch(`https://api.alldebrid.com/v4/magnet/files?apikey=${alldebridApiKey}`, {
+                method: "POST",
+                body: form,
+              });
 
               const linkData: AllDebridResponse<MagnetsResponse<MagnetFile>> = await linkResponse.json();
 
@@ -132,7 +123,7 @@ const server = serve({
               });
 
               const saveLinksRes = await fetch(
-                `https://api.alldebrid.com/v4/user/links/save?apikey=${ALLDEBRID_API_KEY}`,
+                `https://api.alldebrid.com/v4/user/links/save?apikey=${alldebridApiKey}`,
                 {
                   method: "POST",
                   body: f,
