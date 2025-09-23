@@ -37,6 +37,7 @@ type ToastMessage = {
 
 export const App = () => {
   const [query, setQuery] = useState("");
+  const [categoryId, setCategoryId] = useState("2179");
   const [results, setResults] = useState<AsyncData<Result<Torrent[], any>>>(
     AsyncData.NotAsked,
   );
@@ -47,12 +48,20 @@ export const App = () => {
     Option.None(),
   );
 
-  const fetchTorrents = async (searchQuery: string, page: number) => {
+  const fetchTorrents = async ({
+    query,
+    categoryId,
+    page,
+  }: {
+    query: string;
+    categoryId: string;
+    page: number;
+  }) => {
     setResults(AsyncData.Loading);
     try {
       const response = await fetch(`/api/search`, {
         method: "POST",
-        body: JSON.stringify({ search: searchQuery, page: page }),
+        body: JSON.stringify({ search: query, page: page, categoryId }),
       });
       const data = await response.json();
       setResults(AsyncData.Done(Result.Ok(data)));
@@ -64,11 +73,11 @@ export const App = () => {
 
   const onSubmit = () => {
     setPage(1);
-    fetchTorrents(query, 1);
+    fetchTorrents({ query, categoryId, page: 1 });
   };
 
   useEffect(() => {
-    if (query) fetchTorrents(query, page);
+    if (query) fetchTorrents({ query, categoryId, page });
   }, [page]);
 
   const saveTorrent = async (torrentId: number) => {
@@ -83,6 +92,8 @@ export const App = () => {
         setToastMessage(
           Option.Some({ status: "success", message: "File saved" }),
         );
+
+        setTimeout(() => setToastMessage(Option.None()), 2000);
       }
       // TODO: handle torrent pending
     } catch (error) {
@@ -94,7 +105,7 @@ export const App = () => {
 
   return (
     <div className="p-4">
-      <div className="flex flex-col lg:flex-row gap-4 items-center mb-4">
+      <div className="flex flex-col lg:flex-row gap-4 items-start mb-4">
         <form
           onSubmit={(e) => {
             e.preventDefault();
@@ -104,17 +115,31 @@ export const App = () => {
             onSubmit();
           }}
         >
-          <input
-            type="text"
-            autoFocus
-            className="border border-r-0 border-gray-300 rounded-l-lg p-2 text-lg h-10"
-            placeholder="Rechercher un torrent..."
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-          />
-          <button className="bg-blue-100 h-[41px] p-2 border border-blue-200 rounded-r-lg">
-            🔎
-          </button>
+          <div>
+            <input
+              type="text"
+              autoFocus
+              className="border border-r-0 border-gray-300 rounded-l-lg p-2 text-lg h-10"
+              placeholder="Rechercher un torrent..."
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+            />
+            <button className="bg-blue-100 h-[40px] p-2 border border-blue-200 rounded-r-lg">
+              🔎
+            </button>
+          </div>
+          <div className="mt-2">
+            <select
+              name="category_id"
+              className="border border-neutral-300 rounded p-2 w-full"
+              onChange={(e) => setCategoryId(e.target.value)}
+            >
+              <option value="2179">Séries d'animations / Mangas</option>
+              <option value="2178">Films d'animations</option>
+              <option value="2183">Films</option>
+              <option value="2184">Séries</option>
+            </select>
+          </div>
         </form>
         {results.isDone() ? (
           <section className="hidden lg:flex flex-row gap-2">
@@ -200,7 +225,6 @@ export const App = () => {
                   {message}
                 </Toast.Title>
               </Toast.Root>
-
               <Toast.Viewport className="ToastViewport" />
             </Toast.Provider>
           );

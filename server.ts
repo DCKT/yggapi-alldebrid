@@ -66,10 +66,10 @@ const server = serve({
     "/": app,
     "/api/search": {
       async POST(req) {
-        const { search } = await req.json();
+        const { search, categoryId } = await req.json();
 
         const res = await fetch(
-          `https://yggapi.eu/torrents?page=${1}&q=${search}&order_by=uploaded_at&per_page=50`,
+          `https://yggapi.eu/torrents?page=${1}&q=${search}&category_id=${categoryId}&order_by=uploaded_at&per_page=50`,
         );
         const data = await res.json();
 
