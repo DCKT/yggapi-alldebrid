@@ -217,7 +217,7 @@ export const App = () => {
           return (
             <Toast.Provider swipeDirection="right">
               <Toast.Root
-                className={`ToastRoot ${status === "success" ? "!bg-green-100" : "!bg-red-100"}`}
+                className={`ToastRoot ${status === "success" ? "!bg-green-100" : "!bg-red-200"}`}
               >
                 <Toast.Title
                   className={`ToastTitle ${status === "success" ? "!text-green-700" : "!text-red-700"}`}

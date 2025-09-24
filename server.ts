@@ -38,6 +38,7 @@ type AllDebridResponse<T> = {
 };
 
 const sendError = (msg: string, details: any) => {
+  console.log(msg, details);
   return new Response(
     JSON.stringify({
       error: msg,
