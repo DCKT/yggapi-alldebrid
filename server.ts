@@ -32,10 +32,12 @@ type MagnetFile = {
   files: File[];
 };
 
-type AllDebridResponse<T> = {
-  status: "success" | "error";
-  data: T;
-};
+type AllDebridResponse<T> =
+  | {
+      status: "success";
+      data: T;
+    }
+  | { status: "error"; error: { code: string; message: string } };
 
 const sendError = (msg: string, details: any) => {
   console.log(msg, details);
@@ -89,12 +91,16 @@ const server = serve({
             const response = await fetch(
               `https://api.alldebrid.com/v4/magnet/upload?apikey=${ALLDEBRID_API_KEY}&magnets[]=${torrentDetails.hash}`,
             );
-            const { data, status }: AllDebridResponse<MagnetsResponse<Magnet>> =
+            const apiRes: AllDebridResponse<MagnetsResponse<Magnet>> =
               await response.json();
 
-            if (status === "error") {
-              return sendError("Failed to upload magnet to AllDebrid", data);
+            if (apiRes.status === "error") {
+              return sendError(
+                "Failed to upload magnet to AllDebrid",
+                apiRes.error,
+              );
             }
+            const { data } = apiRes;
 
             const uploadedMagnet = data.magnets[0];
 
@@ -116,7 +122,7 @@ const server = serve({
               if (linkData.status === "error") {
                 return sendError(
                   "Failed to fetch magnet details from AllDebrid",
-                  linkData.data,
+                  linkData.error,
                 );
               }
 
@@ -145,7 +151,7 @@ const server = serve({
               if (saveLinksData.status === "error") {
                 return sendError(
                   "Failed to save links to AllDebrid",
-                  saveLinksData.data,
+                  saveLinksData.error,
                 );
               }
               return Response.json({
